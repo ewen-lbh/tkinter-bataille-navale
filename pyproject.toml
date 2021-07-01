@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tkinter-démineur"
+version = "0.1.0"
+description = ""
+authors = ["Ewen Le Bihan <hey@ewen.works>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.dev-dependencies]
+isort = "^5.9.1"
+black = "^21.6b0"
+pylint = "^2.9.3"
+rich = "^10.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
