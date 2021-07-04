@@ -5,32 +5,24 @@ from tkinter.ttk import Button, Frame
 from typing import Any, Callable
 
 # Constantes
-SUNKEN = 2
-OCCUPIED = 1
-EMPTY = 0
+SUNKEN = 2  # Coulé
+SHIP = 1  # Occupé (case avec un bateau non coulé)
+WATER = 0  # Eau (case vide)
 
-STATE_NAMES = {
+# Les états à afficher par rapport à leur code
+CELL_DISPLAY_STATES = {
     SUNKEN: "⛝",
-    OCCUPIED: "□",
-    EMPTY: " ",
+    SHIP: "□",
+    WATER: " ",
 }
 
 
 class Board:
-    def __init__(self, title: str, grid_size: int):
+    def __init__(self, root: Tk, grid_size: int):
         self.grid_size = grid_size
         self.cells = []
 
-        self.root = Tk()
-        self.root.title = title
-
-        self.mainframe = Frame(
-            self.root, width=self.grid_size * 10, height=self.grid_size * 10
-        )
-        self.mainframe.grid(column=0, row=0)
-
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
+        self.mainframe = Frame(root)
 
         self.hits_count = self.misses_count = 0
 
@@ -39,13 +31,13 @@ class Board:
             for y in range(self.grid_size):
                 cell = Button(self.mainframe, text=f"{x}:{y}")
                 cell.bind(
-                    "<Button-1>", partial(self.handle, self.switch_occupied_empty, x, y)
+                    "<Button-1>", partial(self.handle, self.place_or_remove, x, y)
                 )
                 cell.bind("<Button-3>", partial(self.handle, self.hit, x, y))
                 self.cells[x].append(cell)
                 cell.grid(row=x, column=y)
 
-        Label(self.mainframe, textvariable=StringVar(value=0))
+        self @ ([[WATER] * self.grid_size] * self.grid_size)
 
     def __matmul__(self, new_state):
         """
@@ -73,23 +65,27 @@ class Board:
 
     def change_cell(self, x: int, y: int, state: int):
         """
-        Sets the state of the specified cell.
+        Sets the state of the specified cell at row x column y.
         A state is represented as an integer:
         - 2 (or SUNKEN) represents a sunken spot
-        - 1 (or OCCUPIED) represents a boat spot
-        - 0 (or EMPTY) represents a water spot
+        - 1 (or SHIP) represents a ship spot
+        - 0 (or WATER) represents a water (empty) spot
         """
-        self.cells[x][y].configure(text=STATE_NAMES[state])
+        self.cells[x][y].configure(text=CELL_DISPLAY_STATES[state])
 
-    def switch_occupied_empty(self, x: int, y: int):
-        self.change_cell(x, y, OCCUPIED if self.state_of(x, y) == EMPTY else EMPTY)
+    def place_or_remove(self, x: int, y: int):
+        """
+        Switches between placing and removing a ship at row x column y.
+        """
+        self.change_cell(x, y, SHIP if self.state_of(x, y) == WATER else WATER)
 
     def hit(self, x: int, y: int) -> bool:
         """
-        Returns whether it hit a non-sunken boat or not
+        Fires a shot at row x column y
+        Returns whether the shot hit a non-sunken ship or not
         """
         self.hits_count += 1
-        if self.state_of(x, y) == OCCUPIED:
+        if self.state_of(x, y) == SHIP:
             self.change_cell(x, y, SUNKEN)
             return True
         else:
@@ -98,28 +94,36 @@ class Board:
 
     @property
     def state(self) -> list[list[int]]:
-        state_repr = [[EMPTY] * self.grid_size] * self.grid_size
+        """
+        Get state of cells as 2D array
+        """
+        state_repr = [[WATER] * self.grid_size] * self.grid_size
         for x, y in doublerange(self.grid_size):
             state_repr[x][y] = self.state_of(x, y)
         return state_repr
 
     def state_of(self, x: int, y: int) -> int:
-        return {v: k for k, v in STATE_NAMES.items()}[self.cells[x][y]["text"]]
+        """
+        Get state of cell at row x column y
+        """
+        return {v: k for k, v in CELL_DISPLAY_STATES.items()}[self.cells[x][y]["text"]]
 
     @property
     def won(self) -> bool:
-        return not any(cell_state == OCCUPIED for cell_state in self.state)
+        """
+        Whether all the ships sank
+        """
+        return not any(cell_state == SHIP for cell_state in self.state)
 
     @property
     def accuracy(self) -> float:
+        """
+        Proportion of shots taken that hit a ship
+        """
         try:
             return (self.hits_count - self.misses_count) / self.hits_count
         except ZeroDivisionError:
             return 0
-
-    def __call__(self, initial_state=None):
-        self @ (initial_state or [[EMPTY] * self.grid_size] * self.grid_size)
-        self.root.mainloop()
 
 
 def doublerange(outer, inner=None):
@@ -131,5 +135,11 @@ def doublerange(outer, inner=None):
 
 
 if __name__ == "__main__":
-    démineur = Board(title="Démineur", grid_size=10)
-    démineur()
+    root = Tk()
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
+    player_board = Board(root, grid_size=10)
+    ennemy_board = Board(root, grid_size=10)
+    player_board.mainframe.grid(column=0, row=1)
+    ennemy_board.mainframe.grid(column=0, row=0)
+    root.mainloop()
