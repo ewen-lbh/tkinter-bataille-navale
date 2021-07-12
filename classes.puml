@@ -1,0 +1,101 @@
+@startuml classes
+
+abstract Board {
+    grid_size int
+    cells [][]ttk.Button
+
+    render()
+}
+
+Board -> ControlledBoard
+class ControlledBoard {
+    locked bool
+
+    place(x, y)
+    fire(x, y)
+    lock()
+}
+
+Board -> ProjectiveBoard
+ControlledBoard -> ProjectiveBoard
+class ProjectiveBoard {
+    real_board ControlledBoard
+
+    fire(x, y)
+}
+
+ControlledBoard -> Player
+ProjectiveBoard -> Player
+abstract Player {
+    own_board ControlledBoard
+    ennemy_board ProjectiveBoard
+    hits, misses int 
+
+    do_turn()
+    place_ships()
+}
+
+Player -> HumanPlayer
+class HumanPlayer {
+    render_boards()
+}
+
+Player -> AIPlayer
+class AIPlayer {
+
+}
+
+class Game {
+    player_1 Player
+    player_2 Player
+}
+
+@enduml
+
+@startuml timeline
+
+participant Game order 1
+participant P1 order 0
+participant P2 order 2
+
+== Setup turn ==
+Game -> P1: Setup your board
+Game <- P1: Finished setting up the board
+Game -> P2: Setup your board
+Game <- P2: Finished setting up the board
+== Turn 1 (Player 1's) ==
+Game -> P1: Shoot at?
+Game <- P1: (x, y)
+Game -> P2: Shoot at (x, y).
+Game <- P2: Done. State of (x, y) was STATE
+Game -> P1: Result of shot is STATE
+Game <- P1: Finished updating my board.
+== Turn 2 (Player 2's) ==
+Game -> P2: Shoot at?
+Game <- P2: (x, y)
+Game -> P1: Shoot at (x, y).
+Game <- P1: Done. State of (x, y) was STATE
+Game -> P2: Result of shot is STATE
+Game <- P2: Finished updating my board.
+
+@enduml
+
+@startuml timeline, no middle-man
+
+== Setup turn ==
+P1 -> P2: Ready.
+P2 -> P1: Ready.
+== Turn 1 (Player 1's) ==
+P1 -> P2: Shoot at (x, y)
+P1 <- P2: Done. You HIT/MISSED
+P1 -> P2: Finished updating my board.
+== Turn 2 (Player 2's) ==
+P2 -> P1: Shoot at (x, y)
+P2 <- P1: Done. You HIT/MISSED
+P2 -> P1: Finished updating my board.
+== ... ==
+== Turn n (Player (n mod 2 + 1)'s) ==
+P2 -> P1: Shoot at (x, y)
+P2 <- P1: Done. You HIT/MISSED
+P2 -> P1: Finished updating my board: You WON/LOST.
+@enduml
