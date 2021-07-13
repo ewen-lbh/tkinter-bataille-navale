@@ -12,10 +12,12 @@
 
 ## Two types of board
 
+![a physical Battleships game with two boards: the upper one is ProjectiveBoard, the bottom one is ControlledBoard](./board_types_image.png)
+
 ### Projective boards
 
 Shows hits & misses
 
-### Own boards
+### Controlled boards
 
 Shows ships & sunken ships
