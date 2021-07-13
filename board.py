@@ -1,9 +1,8 @@
-from abc import abstractclassmethod
-from functools import partial
+from main import Game
 from tkinter import Tk, Button, Frame, Label
-from typing import Optional, Union
+from typing import Optional
 from utils import *
-from random import randint
+from functools import partial
 
 # Constantes
 WATER = 0  # Eau (case vide)
@@ -19,19 +18,14 @@ CELL_DISPLAY_STATES = {
     UNKNOWN: {"text": "?", "bg": "grey"},
 }
 
-PLACING = 4
-SHOOTING = 5
-DECIDING = 6
-
 
 class Board:
-
     size: int
     cells: list[list[Button]]
     state: list[list[int]]
-    game: "Game"
+    game: Game
 
-    def __init__(self, game: "Game", grid_size: int, initial_state: int):
+    def __init__(self, game: Game, grid_size: int, initial_state: int):
         self.size = grid_size
         self.cells = []
         self.state = []
@@ -49,7 +43,6 @@ class Board:
                 self.state[x].append(initial_state)
                 self.change_cell(x, y, initial_state)
                 cell.grid(row=x, column=y)
-
 
     def __matmul__(self, coords):
         """aesthetics: @ (x, y) to get cell state at (x, y)"""
@@ -81,8 +74,6 @@ class Board:
         self.cells[x][y].configure(**CELL_DISPLAY_STATES[state])
         self.state[x][y] = state
 
-
-
     def state_of(self, x: int, y: int) -> int:
         """
         Get state of cell at row x column y
@@ -93,7 +84,7 @@ class Board:
 
     def render(self, column: int, row: int):
         self.mainframe.grid(column=column, row=row)
-    
+
     def random_coordinates(self) -> tuple[int, int]:
         return randint(0, self.size - 1), randint(0, self.size - 1)
 
@@ -108,11 +99,11 @@ class ControlledBoard(Board):
     locked: bool
     total_ships: int
 
-    def __init__(self, game: "Game", grid_size: int, ships: int):
+    def __init__(self, game: Game, grid_size: int, ships: int):
         super().__init__(game, grid_size, WATER)
         self.locked = False
         self.total_ships = ships
-    
+
     @property
     def ships_left(self) -> int:
         return max(self.total_ships - self.placed_ships, 0)
@@ -122,9 +113,8 @@ class ControlledBoard(Board):
         placed_ships = 0
         for x, y in doublerange(self.size):
             if self @ (x, y) == SHIP:
-                placed_ships+=1
+                placed_ships += 1
         return placed_ships
-
 
     def handle_cell_Button1(self, x, y):
         super().handle_cell_Button1(x, y)
@@ -169,10 +159,14 @@ class ControlledBoard(Board):
 class ProjectiveBoard(Board):
 
     real_board: ControlledBoard
+    shots_fired: int
+    shots_missed: int
 
-    def __init__(self, game: "Game", grid_size: int, represents: ControlledBoard):
+    def __init__(self, game: Game, grid_size: int, represents: ControlledBoard):
         super().__init__(game, grid_size, UNKNOWN)
         self.real_board = represents
+        self.shots_missed = 0
+        self.shots_fired = 0
 
     def handle_cell_Button1(self, x, y):
         super().handle_cell_Button1(x, y)
@@ -193,166 +187,8 @@ class ProjectiveBoard(Board):
         d(f"fired, {hit_a_ship=}, changing cell state")
 
         board.change_cell(x, y, SUNKEN if hit_a_ship else WATER)
+        board.shots_fired += 1
+        if not hit_a_ship:
+            board.shots_missed += 1
 
         board.game.end_turn()
-
-
-class Player:
-    own_board: ControlledBoard
-    ennemy_board: ProjectiveBoard
-    ok_button: Button
-    game: "Game"
-    hits: int
-    misses: int
-    index: int
-    selected_coordinates: tuple[int, int]
-    name: str
-
-    def __init__(
-        self,
-        game: "Game",
-        board: ControlledBoard,
-        ennemy_board: ControlledBoard,
-        index: int,
-        name: str,
-    ) -> None:
-        if board.size != ennemy_board.size:
-            raise TypeError("The two boards should have the same size")
-
-        self.game = game
-        self.index = index
-        self.name = name
-
-        self.own_board = board
-        self.ennemy_board = ProjectiveBoard(game, board.size, represents=ennemy_board)
-        self.ok_button = Button(text="OK")
-        self.ok_button.bind("<Button 1>", self.handle_click_ok)
-
-    def handle_click_ok(self, event) -> Any:
-        """
-        Handles a click on the OK button
-        """
-        raise NotImplementedError("Please implement handle_click_ok.")
-
-    @property
-    def accuracy(self) -> Optional[float]:
-        """
-        Proportion of shots fired that hit a ship.
-        None if no shots have been fired.
-        """
-        try:
-            return (self.hits - self.misses) / self.hits
-        except ZeroDivisionError:
-            return None
-    
-    @property
-    def won(self) -> bool:
-        """
-        Returns True if none the cell's of the ennemy's (controlled) board are ships (i.e. all are sunken or water)
-        """
-        return all(self.ennemy_board.real_board @ (x, y) in (SUNKEN, WATER) for x, y in doublerange(self.ennemy_board.size))
-
-    def is_it_my_turn(self) -> bool:
-        return self.index == self.game.current_player_index
-
-
-class HumanPlayer(Player):
-    def __init__(
-        self,
-        game: "Game",
-        board: ControlledBoard,
-        ennemy_board: ControlledBoard,
-        index: int,
-        name: str,
-    ) -> None:
-        super().__init__(game, board, ennemy_board, index, name)
-
-    def render(self):
-        self.own_board.render(0, 1)
-        self.ennemy_board.render(0, 0)
-        self.ok_button.grid(column=1, row=1)
-
-    def handle_click_ok(self, event) -> Any:
-        if self.game.phase == PLACING:
-            d(f"handling OK button click: locking board, switching to shooting phase")
-            self.own_board.lock()
-            self.game.phase = SHOOTING
-
-
-class AIPlayer(Player):
-    def __init__(
-        self,
-        game: "Game",
-        board: ControlledBoard,
-        ennemy_board: ControlledBoard,
-        index: int,
-        name: str,
-    ) -> None:
-        super().__init__(game, board, ennemy_board, index, name=f"[AI] {name}")
-
-    def decide_coordinate(self) -> tuple[int, int]:
-        """
-        Decide coordinates where to shoot.
-        """
-        return self.ennemy_board.random_coordinates()
-
-    def place_ships(self) -> None:
-        """
-        Fill own board with ship spots
-        """
-        while self.own_board.ships_left:
-            self.own_board.place_or_remove(*self.own_board.random_coordinates())
-
-
-class Game:
-
-    phase: int
-    current_player_index: int
-    players: list[Player]
-
-    def __init__(self) -> None:
-        self.root = Tk()
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        self.phase = PLACING
-        self.current_player_index = 0
-
-        user_board = ControlledBoard(self, grid_size=10, ships=5 + 4 + 3 + 2 + 1)
-        bot_board = ControlledBoard(self, grid_size=10, ships=5 + 4 + 3 + 2 + 1)
-
-        self.user = HumanPlayer(self, user_board, ennemy_board=bot_board, index=0, name="Chirex")
-        self.bot = AIPlayer(self, bot_board, ennemy_board=user_board, index=1, name="Léonard De Vinci")
-        self.players = [self.user, self.bot]
-
-        self.bot.place_ships()
-
-
-    def start(self):
-        self.user.render()
-        #self.bot.ennemy_board.render(2, 0)
-        #self.bot.own_board.render(2, 1)
-        self.root.mainloop()
-    
-    def winner(self) -> Optional[Player]:
-        for _, player in enumerate(self.players):
-            if player.won:
-                return player
-        return None
-
-    def end_turn(self):
-        if self.winner() is not None:
-            for player in self.players:
-                player.own_board.mainframe.grid(column=0, row=2)
-            Label(self.root, text=f"Congratulations, {self.winner().name}. You won!").grid(column=0, row=1)
-        else:
-            self.current_player_index = (self.current_player_index + 1) % 2
-            if self.bot.is_it_my_turn():
-                self.bot.ennemy_board.fire(*self.bot.ennemy_board.real_board.random_coordinates()) 
-
-    @property
-    def current_player(self) -> Player:
-        return [self.user, self.bot][self.current_player_index]
-
-
-if __name__ == "__main__":
-    Game().start()
