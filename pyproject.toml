@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tkinter-démineur"
+name = "tkinter-battleships"
 version = "0.1.0"
 description = ""
 authors = ["Ewen Le Bihan <hey@ewen.works>"]
