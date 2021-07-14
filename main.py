@@ -51,9 +51,9 @@ class Game:
         if (winner := self.winner()) is not None:
             for player in self.players:
                 player.own_board.mainframe.grid(column=0, row=2)
-            Label(
-                self.root, text=f"Congratulations, {winner.name}. You won!"
-            ).grid(column=0, row=1)
+            Label(self.root, text=f"Congratulations, {winner.name}. You won!").grid(
+                column=0, row=1
+            )
         else:
             self.current_player_index = (self.current_player_index + 1) % 2
             if self.bot.is_it_my_turn():

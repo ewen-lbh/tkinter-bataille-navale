@@ -19,8 +19,11 @@ def handle(
 
 
 K, V, H = TypeVar("K"), TypeVar("T"), TypeVar("Hashable_V")
+
+
 def dict_reciprocal(o: dict[K, V], key: Callable[[V], H] = lambda x: x) -> dict[V, H]:
     return {key(v): k for k, v in o.items()}
+
 
 def doublerange(outer, inner=None):
     if inner is None:
@@ -28,6 +31,7 @@ def doublerange(outer, inner=None):
     for a in range(outer):
         for b in range(inner):
             yield a, b
+
 
 def d(text: str, *args, **kwargs):
     print("[debug] " + text, *args, **kwargs)
