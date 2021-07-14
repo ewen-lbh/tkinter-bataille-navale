@@ -1,0 +1,27 @@
+list-comprehension-to-map-call:
+  from: '[f(a) for a in l]'
+  to: list(map(f, l))
+  with:
+    l: [iterable]
+    f: [callable]
+    a: [] # means "Any", i.e. no constraints, can also be omitted
+    c: []
+  rationale: null # means that it's down to personnal preference
+
+no-side-effects-in-comprehension:
+  from: '[f(a) for a in l]'
+  to: |
+    for a in l:
+      f(a)
+  with:
+    l: [iterable]
+    f:
+      - callable
+      - has side effects # could be hard to check for
+      # or: #
+      - returns: {value: None}  # 'type' can also be used, and should work with type hints' syntax, like tuple[int, int] or list[str]
+                                # simply putting None intead of {value: None} is possible since {type: NoneType} or {value: None} are equivalent.
+                                # actually, sourcery could propose refactorings: {value: None} -> None, (such meta, much wow)
+  rationale: |
+    Functions that only have side-effects (i.e. with a return type of None) can be confused has function that return things when put into comprehensions,
+    which is designed specifically for building out a list. Using comprehensions purely for looping purposes makes it unclear and confusing.
