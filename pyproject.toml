@@ -6,6 +6,7 @@ authors = ["Ewen Le Bihan <hey@ewen.works>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
+rich = "^10.6.0"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.9.1"

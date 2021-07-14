@@ -1,8 +1,9 @@
-from main import Game
 from tkinter import Tk, Button, Frame, Label
+from tkinter.constants import VERTICAL
 from typing import Optional
 from utils import *
 from functools import partial
+from random import randint
 
 # Constantes
 WATER = 0  # Eau (case vide)
@@ -18,14 +19,28 @@ CELL_DISPLAY_STATES = {
     UNKNOWN: {"text": "?", "bg": "grey"},
 }
 
+DESTROYER = 2
+CRUISER = 3
+SUBMARINE = 3
+BATTLESHIP = 4
+AIRCRAFT_CARRIER = 5
+
+HORIZONTAL = 10
+VERTICAL = 20
+
 
 class Board:
     size: int
     cells: list[list[Button]]
     state: list[list[int]]
-    game: Game
+    game: "Game"
 
-    def __init__(self, game: Game, grid_size: int, initial_state: int):
+    def __init__(
+        self,
+        game: "Game",
+        grid_size: int,
+        initial_state: int,
+    ):
         self.size = grid_size
         self.cells = []
         self.state = []
@@ -87,6 +102,36 @@ class Board:
 
     def random_coordinates(self) -> tuple[int, int]:
         return randint(0, self.size - 1), randint(0, self.size - 1)
+    
+    def vertical_coordinates(self, y: int, start_x: int, stop_x: int, step: int = 1) -> list[tuple[int, int]]:
+        """
+        Return a list of vertical coordinates, spanning from (start_x, y) to (stop_x, y).
+        stop_x will be clamped to self.size - 1.
+        """
+
+        stop_x = min(stop_x, self.size - 1)
+        return [(x, y) for x in range(start_x, stop_x, step)]
+
+    def horizontal_coordinates(self, x: int, start_y: int, stop_y: int, step: int = 1) -> list[tuple[int, int]]:
+        """
+        Return a list of horizontal coordinates, spanning from (x, start_y) to (x, stop_y).
+        stop_y will be clamped to self.size - 1.
+        """
+
+        stop_y = min(stop_y, self.size - 1)
+        return [(x, y) for y in range(start_y, stop_y+1, step)]
+
+def is_vertically_adjacent(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    d(f"adjacency check: {a,b=}", end=" ")
+    xa, ya = a
+    xb, yb = b
+    is_adjacent = xa == xb and abs(ya - yb) == 1
+    print(f"-> {is_adjacent}")
+    return is_adjacent
+
+
+def is_horizontally_adjacent(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    return is_vertically_adjacent((a[1], a[0]), (b[1], b[0]))
 
 
 class ControlledBoard(Board):
@@ -98,11 +143,13 @@ class ControlledBoard(Board):
 
     locked: bool
     total_ships: int
+    fleet: set[int]
 
-    def __init__(self, game: Game, grid_size: int, ships: int):
-        super().__init__(game, grid_size, WATER)
+    def __init__(self, game: "Game", grid_size: int, fleet: set[int]):
+        super().__init__(game, grid_size, initial_state=WATER)
+        self.fleet = fleet
         self.locked = False
-        self.total_ships = ships
+        self.total_ships = sum(fleet)
 
     @property
     def ships_left(self) -> int:
@@ -110,11 +157,7 @@ class ControlledBoard(Board):
 
     @property
     def placed_ships(self) -> int:
-        placed_ships = 0
-        for x, y in doublerange(self.size):
-            if self @ (x, y) == SHIP:
-                placed_ships += 1
-        return placed_ships
+        return sum(self @ (x, y) == SHIP for x, y in doublerange(self.size))
 
     def handle_cell_Button1(self, x, y):
         super().handle_cell_Button1(x, y)
@@ -148,12 +191,83 @@ class ControlledBoard(Board):
         """
         if self.state_of(x, y) == WATER:
             return False
-        else:
-            self.change_cell(x, y, SUNKEN)
-            return True
+
+        self.change_cell(x, y, SUNKEN)
+        return True
 
     def lock(self):
         self.locked = True
+
+    @property
+    def legal(self) -> bool:
+        """
+        Whether the current board's state is legal:
+        The number of SHIP slots should exactly match the fleet
+        """
+        ships_found = 0
+        for i, ship in enumerate(self.fleet):
+            d(f"recherche du bateau #{i} (de taille {ship})")
+            ship_found = False
+            for (x, y) in doublerange(self.size):
+                d(f"\tanalyse de la cellule {(x, y)}")
+                if self @ (x, y) == WATER:
+                    d(f"\tc'est de l'eau. cellule suivante...")
+                    continue
+
+                current_ship = ((x, y),)
+                d(f"\tle bateau est maintenant {current_ship!r}")
+
+                vertical_search_x = x
+                d(f"\tVerticalement:")
+                while len(current_ship) != ship:
+                    vertical_search_x += 1
+                    d(f"\t\tcellule ({vertical_search_x, y})")
+                    if (
+                        0 <= vertical_search_x <= self.size - 1
+                        and self @ (vertical_search_x, y) == SHIP
+                    ):
+                        current_ship = (*current_ship, (vertical_search_x, y))
+                        d(f"\t\tajoutée au bateau, qui est maintenant {current_ship}")
+                    else:
+                        d(f"\t\tc'est de l'eau. Fin de la recherche verticale.")
+                        break
+
+                horizontal_search_y = y
+                d(f"\tHorizontalement:")
+                while len(current_ship) != ship:
+                    horizontal_search_y += 1
+                    d(f"\t\tcellule ({x, horizontal_search_y})")
+                    if (
+                        0 <= horizontal_search_y <= self.size - 1
+                        and self @ (x, horizontal_search_y) == SHIP
+                    ):
+                        current_ship = (*current_ship, (x, horizontal_search_y))
+                        d(f"\t\t\tajoutée au bateau, qui est maintenant {current_ship}")
+                    else:
+                        d(f"\t\t\tc'est de leau.")
+                        d(f"\t\tFin de la recherche horizontale.")
+                        break
+
+                if len(current_ship) == ship:
+                    d(f"\t>> Le bateau a été trouvé!")
+                    ship_found = True
+                else:
+                    d(f"\tLe bateau n'a pas été trouvé à partir de cette cellule.")
+                    current_ship = ()
+
+                if ship_found:
+                    ships_found += 1
+                    break
+            if not ship_found:
+                d(
+                    f">> bateau #{i} non trouvé. le plateau n'est donc pas dans un état légal."
+                )
+                return False
+
+        # check if there was as much ship slots as the total number of ships as dictated by the board's fleet
+        return len(
+            [(x, y) for (x, y) in doublerange(self.size) if self @ (x, y) == SHIP]
+        ) == sum(self.fleet)
 
 
 class ProjectiveBoard(Board):
@@ -162,8 +276,8 @@ class ProjectiveBoard(Board):
     shots_fired: int
     shots_missed: int
 
-    def __init__(self, game: Game, grid_size: int, represents: ControlledBoard):
-        super().__init__(game, grid_size, UNKNOWN)
+    def __init__(self, game: "Game", grid_size: int, represents: ControlledBoard):
+        super().__init__(game, grid_size, initial_state=UNKNOWN)
         self.real_board = represents
         self.shots_missed = 0
         self.shots_fired = 0

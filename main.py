@@ -1,13 +1,19 @@
 from tkinter import Tk, Label
 from typing import Optional
 from utils import *
-from board import ControlledBoard
-from player import Player, HumanPlayer, AIPlayer
+from board import (
+    ControlledBoard,
+    DESTROYER,
+    CRUISER,
+    SUBMARINE,
+    BATTLESHIP,
+    AIRCRAFT_CARRIER,
+)
+from player import Player, HumanPlayer, AIPlayer, PLACING
+from rich import print as pprint
 
-# Constantes
-PLACING = 4
-SHOOTING = 5
-DECIDING = 6
+FLEET = [DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER]
+GRID_SIZE = 10
 
 
 class Game:
@@ -22,8 +28,8 @@ class Game:
         self.phase = PLACING
         self.current_player_index = 0
 
-        user_board = ControlledBoard(self, grid_size=10, ships=5 + 4 + 3 + 2 + 1)
-        bot_board = ControlledBoard(self, grid_size=10, ships=5 + 4 + 3 + 2 + 1)
+        user_board = ControlledBoard(self, grid_size=GRID_SIZE, fleet=FLEET)
+        bot_board = ControlledBoard(self, grid_size=GRID_SIZE, fleet=FLEET)
 
         self.user = HumanPlayer(
             self, user_board, ennemy_board=bot_board, index=0, name="Chirex"
@@ -34,6 +40,8 @@ class Game:
         self.players = [self.user, self.bot]
 
         self.bot.place_ships()
+        d("ennemy state is", end=" ")
+        pprint(self.bot.own_board.state)
 
     def start(self):
         self.user.render()
@@ -52,11 +60,12 @@ class Game:
             for player in self.players:
                 player.own_board.mainframe.grid(column=0, row=2)
             Label(
-                self.root, text=f"Congratulations, {winner.name}. You won!"
+                self.root,
+                text=f"Congratulations, {winner.name}. You won with {winner.accuracy*100}% accuracy!",
             ).grid(column=0, row=1)
         else:
             self.current_player_index = (self.current_player_index + 1) % 2
-            if self.bot.is_it_my_turn():
+            if self.bot.turn_is_mine():
                 self.bot.ennemy_board.fire(
                     *self.bot.ennemy_board.real_board.random_coordinates()
                 )

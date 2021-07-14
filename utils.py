@@ -1,5 +1,6 @@
 import tkinter
 from typing import Callable, Any, TypeVar
+from rich import print
 
 
 def handle(
@@ -19,15 +20,22 @@ def handle(
 
 
 K, V, H = TypeVar("K"), TypeVar("T"), TypeVar("Hashable_V")
+
+
 def dict_reciprocal(o: dict[K, V], key: Callable[[V], H] = lambda x: x) -> dict[V, H]:
     return {key(v): k for k, v in o.items()}
 
+
 def doublerange(outer, inner=None):
+    """
+    inner defaults to outer's value
+    """
     if inner is None:
         inner = outer
     for a in range(outer):
         for b in range(inner):
             yield a, b
 
+
 def d(text: str, *args, **kwargs):
-    print("[debug] " + text, *args, **kwargs)
+    print("[dim]\[debug][/] " + text, *args, **kwargs)

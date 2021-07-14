@@ -1,22 +1,37 @@
-from board import ControlledBoard, ProjectiveBoard, SUNKEN, WATER
+from tkinter.constants import VERTICAL
+from board import (
+    ControlledBoard,
+    HORIZONTAL,
+    ProjectiveBoard,
+    SUNKEN,
+    WATER,
+    is_horizontally_adjacent,
+    is_vertically_adjacent,
+)
 from utils import *
-from main import Game, PLACING, SHOOTING
 from typing import Any, Optional
 from tkinter import Button
+import random
+
+
+# Constantes
+PLACING = 4
+SHOOTING = 5
+DECIDING = 6
 
 
 class Player:
     own_board: ControlledBoard
     ennemy_board: ProjectiveBoard
     ok_button: Button
-    game: Game
+    game: "Game"
     index: int
     selected_coordinates: tuple[int, int]
     name: str
 
     def __init__(
         self,
-        game: Game,
+        game: "Game",
         board: ControlledBoard,
         ennemy_board: ControlledBoard,
         index: int,
@@ -63,14 +78,14 @@ class Player:
             for x, y in doublerange(self.ennemy_board.size)
         )
 
-    def is_it_my_turn(self) -> bool:
+    def turn_is_mine(self) -> bool:
         return self.index == self.game.current_player_index
 
 
 class HumanPlayer(Player):
     def __init__(
         self,
-        game: Game,
+        game: "Game",
         board: ControlledBoard,
         ennemy_board: ControlledBoard,
         index: int,
@@ -86,6 +101,9 @@ class HumanPlayer(Player):
     def handle_click_ok(self, event) -> Any:
         if self.game.phase == PLACING:
             d(f"handling OK button click: locking board, switching to shooting phase")
+            if not self.own_board.legal:
+                d(f"board is not legal! not locking & switching phase.")
+                return
             self.own_board.lock()
             self.game.phase = SHOOTING
 
@@ -93,7 +111,7 @@ class HumanPlayer(Player):
 class AIPlayer(Player):
     def __init__(
         self,
-        game: Game,
+        game: "Game",
         board: ControlledBoard,
         ennemy_board: ControlledBoard,
         index: int,
@@ -111,5 +129,46 @@ class AIPlayer(Player):
         """
         Fill own board with ship spots
         """
-        while self.own_board.ships_left:
-            self.own_board.place_or_remove(*self.own_board.random_coordinates())
+        for ship in self.own_board.fleet:
+            self.place_ship_randomly(ship)
+
+    def place_ship(self, coords: list[tuple[int, int]]) -> None:
+        for (x, y) in coords:
+            self.own_board.place_or_remove(x, y)
+
+    def can_place_ship_at(self, x: int, y: int, ship: int, orientation: int):
+        """
+        Returns whether placing a ship at (x, y) in orientation `orientation` (`VERTICAL` or `HORIZONTAL`)
+        is possible.
+        """
+        if orientation == HORIZONTAL:
+            return [
+                self.own_board @ (x, y)
+                for (x, y) in self.own_board.horizontal_coordinates(x, y, y + ship)
+            ] == [WATER] * ship
+        elif orientation == VERTICAL:
+            return [
+                self.own_board @ (x, y)
+                for (x, y) in self.own_board.vertical_coordinates(y, x, x + ship)
+            ] == [WATER] * ship
+        else:
+            raise ValueError(f"Unknown orientation {orientation!r}")
+
+    def place_ship_randomly(self, ship: int) -> None:
+        """
+        Returns an available spot for a ship of length `ship`.
+        Raises ValueError if the board does not have room for one.
+        """
+
+        coords = list(doublerange(self.own_board.size))
+        random.shuffle(coords)
+        for (x, y) in coords:
+            if self.can_place_ship_at(x, y, ship, VERTICAL):
+                self.place_ship(self.own_board.vertical_coordinates(y, x, x + ship))
+                return
+            elif self.can_place_ship_at(x, y, ship, HORIZONTAL):
+                self.place_ship(self.own_board.horizontal_coordinates(x, y, y + ship))
+                return
+        raise ValueError(
+                f"Cannot fit a {ship}-cell-long ship in this player's board"
+            )
