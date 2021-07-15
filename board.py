@@ -64,10 +64,10 @@ class Board:
         return self.state[coords[0]][coords[1]]
 
     def handle_cell_Button1(self, x: int, y: int):
-        d(f"handling <Button 1> {x=}, {y=}")
+        self.d(f"handling <Button 1> {x=}, {y=}")
 
     def handle_cell_Button3(self, x: int, y: int):
-        d(f"handling <Button 3> {x=}, {y=}")
+        self.d(f"handling <Button 3> {x=}, {y=}")
 
     def set_state(self, new_state):
         """
@@ -102,8 +102,10 @@ class Board:
 
     def random_coordinates(self) -> tuple[int, int]:
         return randint(0, self.size - 1), randint(0, self.size - 1)
-    
-    def vertical_coordinates(self, y: int, start_x: int, stop_x: int, step: int = 1) -> list[tuple[int, int]]:
+
+    def vertical_coordinates(
+        self, y: int, start_x: int, stop_x: int, step: int = 1
+    ) -> list[tuple[int, int]]:
         """
         Return a list of vertical coordinates, spanning from (start_x, y) to (stop_x, y).
         stop_x will be clamped to self.size - 1.
@@ -112,14 +114,16 @@ class Board:
         stop_x = min(stop_x, self.size - 1)
         return [(x, y) for x in range(start_x, stop_x, step)]
 
-    def horizontal_coordinates(self, x: int, start_y: int, stop_y: int, step: int = 1) -> list[tuple[int, int]]:
+    def horizontal_coordinates(
+        self, x: int, start_y: int, stop_y: int, step: int = 1
+    ) -> list[tuple[int, int]]:
         """
         Return a list of horizontal coordinates, spanning from (x, start_y) to (x, stop_y).
         stop_y will be clamped to self.size - 1.
         """
 
         stop_y = min(stop_y, self.size - 1)
-        return [(x, y) for y in range(start_y, stop_y+1, step)]
+        return [(x, y) for y in range(start_y, stop_y + 1, step)]
 
     def cardinal_coordinates(
         self, x: int, y: int
@@ -136,8 +140,17 @@ class Board:
             *self.vertical_coordinates(y, x - 1, x + 1, 2),
         )
 
+    def d(self, t: str, *args, **kwargs):
+        if self.owner is None: return d(t, *args, **kwargs)
+        return d(
+            ("[green]" if self.owner.human else "[cyan]") + self.owner.name + "[/] " + t,
+            *args,
+            **kwargs,
+        )
+
+
 def is_vertically_adjacent(a: tuple[int, int], b: tuple[int, int]) -> bool:
-    d(f"adjacency check: {a,b=}", end=" ")
+    self.d(f"adjacency check: {a,b=}", end=" ")
     xa, ya = a
     xb, yb = b
     is_adjacent = xa == xb and abs(ya - yb) == 1
@@ -194,16 +207,16 @@ class ControlledBoard(Board):
         Switches between placing and removing a ship at row x column y.
         """
         if self.locked:
-            d(f"board is locked, not switching state of ({x}, {y})")
+            self.d(f"board is locked, not switching state of ({x}, {y})")
             return
         if not self.ships_left and self @ (x, y) == WATER:
-            d(f"no ships left!")
+            self.d(f"no ships left!")
             return
         if self @ (x, y) == WATER:
-            d(f"{self.ships_left=}, changing state of ({x}, {y}) to SHIP")
+            self.d(f"{self.ships_left=}, changing state of ({x}, {y}) to SHIP")
             self.change_cell(x, y, SHIP)
         else:
-            d(f"{self.ships_left=}, changing state of ({x}, {y}) to WATER")
+            self.d(f"{self.ships_left=}, changing state of ({x}, {y}) to WATER")
             self.change_cell(x, y, WATER)
 
     def fire(self, x: int, y: int) -> bool:
@@ -228,53 +241,53 @@ class ControlledBoard(Board):
         """
         ships_found = 0
         for i, ship in enumerate(self.fleet):
-            d(f"recherche du bateau #{i} (de taille {ship})")
+            self.d(f"recherche du bateau #{i} (de taille {ship})")
             ship_found = False
             for (x, y) in doublerange(self.size):
-                d(f"\tanalyse de la cellule {(x, y)}")
+                self.d(f"\tanalyse de la cellule {(x, y)}")
                 if self @ (x, y) == WATER:
-                    d(f"\tc'est de l'eau. cellule suivante...")
+                    self.d(f"\tc'est de l'eau. cellule suivante...")
                     continue
 
                 current_ship = ((x, y),)
-                d(f"\tle bateau est maintenant {current_ship!r}")
+                self.d(f"\tle bateau est maintenant {current_ship!r}")
 
                 vertical_search_x = x
-                d(f"\tVerticalement:")
+                self.d(f"\tVerticalement:")
                 while len(current_ship) != ship:
                     vertical_search_x += 1
-                    d(f"\t\tcellule ({vertical_search_x, y})")
+                    self.d(f"\t\tcellule ({vertical_search_x, y})")
                     if (
                         0 <= vertical_search_x <= self.size - 1
                         and self @ (vertical_search_x, y) == SHIP
                     ):
                         current_ship = (*current_ship, (vertical_search_x, y))
-                        d(f"\t\tajoutée au bateau, qui est maintenant {current_ship}")
+                        self.d(f"\t\tajoutée au bateau, qui est maintenant {current_ship}")
                     else:
-                        d(f"\t\tc'est de l'eau. Fin de la recherche verticale.")
+                        self.d(f"\t\tc'est de l'eau. Fin de la recherche verticale.")
                         break
 
                 horizontal_search_y = y
-                d(f"\tHorizontalement:")
+                self.d(f"\tHorizontalement:")
                 while len(current_ship) != ship:
                     horizontal_search_y += 1
-                    d(f"\t\tcellule ({x, horizontal_search_y})")
+                    self.d(f"\t\tcellule ({x, horizontal_search_y})")
                     if (
                         0 <= horizontal_search_y <= self.size - 1
                         and self @ (x, horizontal_search_y) == SHIP
                     ):
                         current_ship = (*current_ship, (x, horizontal_search_y))
-                        d(f"\t\t\tajoutée au bateau, qui est maintenant {current_ship}")
+                        self.d(f"\t\t\tajoutée au bateau, qui est maintenant {current_ship}")
                     else:
-                        d(f"\t\t\tc'est de leau.")
-                        d(f"\t\tFin de la recherche horizontale.")
+                        self.d(f"\t\t\tc'est de leau.")
+                        self.d(f"\t\tFin de la recherche horizontale.")
                         break
 
                 if len(current_ship) == ship:
-                    d(f"\t>> Le bateau a été trouvé!")
+                    self.d(f"\t>> Le bateau a été trouvé!")
                     ship_found = True
                 else:
-                    d(f"\tLe bateau n'a pas été trouvé à partir de cette cellule.")
+                    self.d(f"\tLe bateau n'a pas été trouvé à partir de cette cellule.")
                     current_ship = ()
 
                 if ship_found:
@@ -319,20 +332,21 @@ class ProjectiveBoard(Board):
         """aesthetics: ^ (x, y) to fire at (x, y)"""
         return self.fire(*coords)
 
-    def fire(board, x: int, y: int) -> None:
-        d(f"fire at {x=}, {y=}.")
+    def fire(self, x: int, y: int) -> None:
+        self.d(f"fire at {x=}, {y=}.")
         # # Don't fire if the cell is already known (i.e. has already been shot)
         # if (board @ (x, y)) != UNKNOWN:
-        #     d(f"state={board @ (x, y)} is already known, not firing.")
+        #     self.d(f"state={board @ (x, y)} is already known, not firing.")
         #     return
 
-        hit_a_ship = board.real_board.fire(x, y)
-        d(f"fired, {hit_a_ship=}, changing cell state")
+        hit_a_ship = self.real_board.fire(x, y)
+        self.d(f"strategy is {self.owner.strategy}")
         self.owner.strategy.react_to_shot_result(x, y, hit_a_ship)
+        self.d(f"fired, {hit_a_ship=}, changing cell state")
 
-        board.change_cell(x, y, SUNKEN if hit_a_ship else WATER)
-        board.shots_fired += 1
+        self.change_cell(x, y, SUNKEN if hit_a_ship else WATER)
+        self.shots_fired += 1
         if not hit_a_ship:
-            board.shots_missed += 1
+            self.shots_missed += 1
 
-        board.game.end_turn()
+        self.game.end_turn()
