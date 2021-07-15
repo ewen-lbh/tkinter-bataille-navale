@@ -1,3 +1,4 @@
+from ai import NoStrategy, Strategy
 from tkinter.constants import VERTICAL
 from board import (
     ControlledBoard,
@@ -9,7 +10,7 @@ from board import (
     is_vertically_adjacent,
 )
 from utils import *
-from typing import Any, Optional
+from typing import Any, Optional, Type
 from tkinter import Button
 import random
 
@@ -27,6 +28,7 @@ class Player:
     game: "Game"
     index: int
     selected_coordinates: tuple[int, int]
+    strategy: Strategy
     name: str
 
     def __init__(
@@ -36,6 +38,7 @@ class Player:
         ennemy_board: ControlledBoard,
         index: int,
         name: str,
+        strategy: Type[Strategy]
     ) -> None:
         if board.size != ennemy_board.size:
             raise TypeError("The two boards should have the same size")
@@ -43,9 +46,10 @@ class Player:
         self.game = game
         self.index = index
         self.name = name
-
         self.own_board = board
-        self.ennemy_board = ProjectiveBoard(game, board.size, represents=ennemy_board)
+        self.own_board.owner = self
+        self.ennemy_board = ProjectiveBoard(game, board.size, represents=ennemy_board, owner=self)
+        self.strategy = strategy(strategy.name, self.own_board, self.ennemy_board)
         self.ok_button = Button(text="OK")
         self.ok_button.bind("<Button 1>", self.handle_click_ok)
 
@@ -81,6 +85,17 @@ class Player:
     def turn_is_mine(self) -> bool:
         return self.index == self.game.current_player_index
 
+    @property
+    def human(self) -> bool:
+        raise NotImplementedError("Please implement human property")
+
+    def d(self, t: str, *args, **kwargs):
+        return d(
+            ("[green]" if self.human else "[cyan]") + self.name + "[/] " + t,
+            *args,
+            **kwargs,
+        )
+
 
 class HumanPlayer(Player):
     def __init__(
@@ -91,7 +106,7 @@ class HumanPlayer(Player):
         index: int,
         name: str,
     ) -> None:
-        super().__init__(game, board, ennemy_board, index, name)
+        super().__init__(game, board, ennemy_board, index, name, strategy=NoStrategy)
 
     def render(self):
         self.own_board.render(0, 1)
@@ -100,12 +115,18 @@ class HumanPlayer(Player):
 
     def handle_click_ok(self, event) -> Any:
         if self.game.phase == PLACING:
-            d(f"handling OK button click: locking board, switching to shooting phase")
+            self.d(
+                f"handling OK button click: locking board, switching to shooting phase"
+            )
             if not self.own_board.legal:
-                d(f"board is not legal! not locking & switching phase.")
+                self.d(f"board is not legal! not locking & switching phase.")
                 return
             self.own_board.lock()
             self.game.phase = SHOOTING
+
+    @property
+    def human(self) -> bool:
+        return True
 
 
 class AIPlayer(Player):
@@ -114,16 +135,17 @@ class AIPlayer(Player):
         game: "Game",
         board: ControlledBoard,
         ennemy_board: ControlledBoard,
+        strategy: Type[Strategy],
         index: int,
         name: str,
     ) -> None:
-        super().__init__(game, board, ennemy_board, index, name=f"[AI] {name}")
+        super().__init__(game, board, ennemy_board, index, name=f"[AI] {name}", strategy=strategy)
 
-    def decide_coordinate(self) -> tuple[int, int]:
+    def decide_coordinates(self) -> tuple[int, int]:
         """
         Decide coordinates where to shoot.
         """
-        return self.ennemy_board.random_coordinates()
+        return self.strategy.choose_shot_location()
 
     def place_ships(self) -> None:
         """
@@ -169,6 +191,8 @@ class AIPlayer(Player):
             elif self.can_place_ship_at(x, y, ship, HORIZONTAL):
                 self.place_ship(self.own_board.horizontal_coordinates(x, y, y + ship))
                 return
-        raise ValueError(
-                f"Cannot fit a {ship}-cell-long ship in this player's board"
-            )
+        raise ValueError(f"Cannot fit a {ship}-cell-long ship in this player's board")
+
+    @property
+    def human(self) -> bool:
+        return False

@@ -1,3 +1,4 @@
+from ai import HuntTarget
 from tkinter import Tk, Label
 from typing import Optional
 from utils import *
@@ -16,6 +17,12 @@ FLEET = [DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER]
 GRID_SIZE = 10
 
 
+class DummyPlayer:
+    def __init__(self, name: str, human: bool) -> None:
+        self.name = name
+        self.human = human
+
+
 class Game:
     phase: int
     current_player_index: int
@@ -28,14 +35,26 @@ class Game:
         self.phase = PLACING
         self.current_player_index = 0
 
-        user_board = ControlledBoard(self, grid_size=GRID_SIZE, fleet=FLEET)
-        bot_board = ControlledBoard(self, grid_size=GRID_SIZE, fleet=FLEET)
+        user_board = ControlledBoard(
+            self, grid_size=GRID_SIZE, fleet=FLEET, owner=DummyPlayer("Chirex", True)
+        )
+        bot_board = ControlledBoard(
+            self,
+            grid_size=GRID_SIZE,
+            fleet=FLEET,
+            owner=DummyPlayer("Léonard de Vinci", False),
+        )
 
         self.user = HumanPlayer(
             self, user_board, ennemy_board=bot_board, index=0, name="Chirex"
         )
         self.bot = AIPlayer(
-            self, bot_board, ennemy_board=user_board, index=1, name="Léonard De Vinci"
+            self,
+            bot_board,
+            ennemy_board=user_board,
+            index=1,
+            name="Léonard De Vinci",
+            strategy=HuntTarget,
         )
         self.players = [self.user, self.bot]
 
@@ -66,9 +85,7 @@ class Game:
         else:
             self.current_player_index = (self.current_player_index + 1) % 2
             if self.bot.turn_is_mine():
-                self.bot.ennemy_board.fire(
-                    *self.bot.ennemy_board.real_board.random_coordinates()
-                )
+                self.bot.ennemy_board.fire(*self.bot.decide_coordinates())
 
     @property
     def current_player(self) -> Player:

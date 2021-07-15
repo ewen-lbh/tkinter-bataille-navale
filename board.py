@@ -1,8 +1,9 @@
-from tkinter import Tk, Button, Frame, Label
+from tkinter import Place, Tk, Button, Frame, Label
 from tkinter.constants import VERTICAL
 from typing import Optional
 from utils import *
 from functools import partial
+from ai import Strategy, NoStrategy
 from random import randint
 
 # Constantes
@@ -34,18 +35,17 @@ class Board:
     cells: list[list[Button]]
     state: list[list[int]]
     game: "Game"
+    owner: "Player"
 
     def __init__(
-        self,
-        game: "Game",
-        grid_size: int,
-        initial_state: int,
+        self, game: "Game", grid_size: int, initial_state: int, owner: "Player"
     ):
         self.size = grid_size
         self.cells = []
         self.state = []
         self.mainframe = Frame(game.root)
         self.game = game
+        self.owner = owner
 
         for x in range(self.size):
             self.cells.append([])
@@ -121,6 +121,21 @@ class Board:
         stop_y = min(stop_y, self.size - 1)
         return [(x, y) for y in range(start_y, stop_y+1, step)]
 
+    def cardinal_coordinates(
+        self, x: int, y: int
+    ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
+        """
+        Given a center C at coordinates (x, y), it returns coordinates of N, S, W, E in:
+
+                N
+            W   C   E
+                S
+        """
+        return (
+            *self.horizontal_coordinates(x, y - 1, y + 1, 2),
+            *self.vertical_coordinates(y, x - 1, x + 1, 2),
+        )
+
 def is_vertically_adjacent(a: tuple[int, int], b: tuple[int, int]) -> bool:
     d(f"adjacency check: {a,b=}", end=" ")
     xa, ya = a
@@ -144,9 +159,16 @@ class ControlledBoard(Board):
     locked: bool
     total_ships: int
     fleet: set[int]
+    owner: "Player"
 
-    def __init__(self, game: "Game", grid_size: int, fleet: set[int]):
-        super().__init__(game, grid_size, initial_state=WATER)
+    def __init__(
+        self,
+        game: "Game",
+        grid_size: int,
+        fleet: set[int],
+        owner: "Player" = None,
+    ):
+        super().__init__(game, grid_size, initial_state=WATER, owner=owner)
         self.fleet = fleet
         self.locked = False
         self.total_ships = sum(fleet)
@@ -275,9 +297,16 @@ class ProjectiveBoard(Board):
     real_board: ControlledBoard
     shots_fired: int
     shots_missed: int
+    owner: "Player"
 
-    def __init__(self, game: "Game", grid_size: int, represents: ControlledBoard):
-        super().__init__(game, grid_size, initial_state=UNKNOWN)
+    def __init__(
+        self,
+        game: "Game",
+        grid_size: int,
+        represents: ControlledBoard,
+        owner: "Player" = None,
+    ):
+        super().__init__(game, grid_size, initial_state=UNKNOWN, owner=owner or represents.owner)
         self.real_board = represents
         self.shots_missed = 0
         self.shots_fired = 0
@@ -299,6 +328,7 @@ class ProjectiveBoard(Board):
 
         hit_a_ship = board.real_board.fire(x, y)
         d(f"fired, {hit_a_ship=}, changing cell state")
+        self.owner.strategy.react_to_shot_result(x, y, hit_a_ship)
 
         board.change_cell(x, y, SUNKEN if hit_a_ship else WATER)
         board.shots_fired += 1
