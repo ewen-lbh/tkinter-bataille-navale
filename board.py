@@ -141,9 +141,13 @@ class Board:
         )
 
     def d(self, t: str, *args, **kwargs):
-        if self.owner is None: return d(t, *args, **kwargs)
+        if self.owner is None:
+            return d(t, *args, **kwargs)
         return d(
-            ("[green]" if self.owner.human else "[cyan]") + self.owner.name + "[/] " + t,
+            ("[green]" if self.owner.human else "[cyan]")
+            + self.owner.name
+            + "[/] "
+            + t,
             *args,
             **kwargs,
         )
@@ -249,7 +253,9 @@ class ControlledBoard(Board):
                         and self @ (vertical_search_x, y) == SHIP
                     ):
                         current_ship = (*current_ship, (vertical_search_x, y))
-                        self.d(f"\t\tajoutée au bateau, qui est maintenant {current_ship}")
+                        self.d(
+                            f"\t\tajoutée au bateau, qui est maintenant {current_ship}"
+                        )
                     else:
                         self.d(f"\t\tc'est de l'eau. Fin de la recherche verticale.")
                         break
@@ -264,7 +270,9 @@ class ControlledBoard(Board):
                         and self @ (x, horizontal_search_y) == SHIP
                     ):
                         current_ship = (*current_ship, (x, horizontal_search_y))
-                        self.d(f"\t\t\tajoutée au bateau, qui est maintenant {current_ship}")
+                        self.d(
+                            f"\t\t\tajoutée au bateau, qui est maintenant {current_ship}"
+                        )
                     else:
                         self.d(f"\t\t\tc'est de leau.")
                         self.d(f"\t\tFin de la recherche horizontale.")
@@ -306,7 +314,9 @@ class ProjectiveBoard(Board):
         represents: ControlledBoard,
         owner: "Player" = None,
     ):
-        super().__init__(game, grid_size, initial_state=UNKNOWN, owner=owner or represents.owner)
+        super().__init__(
+            game, grid_size, initial_state=UNKNOWN, owner=owner or represents.owner
+        )
         self.real_board = represents
         self.shots_missed = 0
         self.shots_fired = 0

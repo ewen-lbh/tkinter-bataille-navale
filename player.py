@@ -38,7 +38,7 @@ class Player:
         ennemy_board: ControlledBoard,
         index: int,
         name: str,
-        strategy: Type[Strategy]
+        strategy: Type[Strategy],
     ) -> None:
         if board.size != ennemy_board.size:
             raise TypeError("The two boards should have the same size")
@@ -48,7 +48,9 @@ class Player:
         self.name = name
         self.own_board = board
         self.own_board.owner = self
-        self.ennemy_board = ProjectiveBoard(game, board.size, represents=ennemy_board, owner=self)
+        self.ennemy_board = ProjectiveBoard(
+            game, board.size, represents=ennemy_board, owner=self
+        )
         self.strategy = strategy(strategy.name, self.own_board, self.ennemy_board)
         self.ok_button = Button(text="OK")
         self.ok_button.bind("<Button 1>", self.handle_click_ok)
@@ -139,7 +141,9 @@ class AIPlayer(Player):
         index: int,
         name: str,
     ) -> None:
-        super().__init__(game, board, ennemy_board, index, name=f"[AI] {name}", strategy=strategy)
+        super().__init__(
+            game, board, ennemy_board, index, name=f"[AI] {name}", strategy=strategy
+        )
 
     def decide_coordinates(self) -> tuple[int, int]:
         """
