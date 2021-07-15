@@ -6,8 +6,6 @@ from board import (
     ProjectiveBoard,
     SUNKEN,
     WATER,
-    is_horizontally_adjacent,
-    is_vertically_adjacent,
 )
 from utils import *
 from typing import Any, Optional, Type
