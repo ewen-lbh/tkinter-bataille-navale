@@ -149,19 +149,6 @@ class Board:
         )
 
 
-def is_vertically_adjacent(a: tuple[int, int], b: tuple[int, int]) -> bool:
-    self.d(f"adjacency check: {a,b=}", end=" ")
-    xa, ya = a
-    xb, yb = b
-    is_adjacent = xa == xb and abs(ya - yb) == 1
-    print(f"-> {is_adjacent}")
-    return is_adjacent
-
-
-def is_horizontally_adjacent(a: tuple[int, int], b: tuple[int, int]) -> bool:
-    return is_vertically_adjacent((a[1], a[0]), (b[1], b[0]))
-
-
 class ControlledBoard(Board):
     """
     A board that is controlled by the player.

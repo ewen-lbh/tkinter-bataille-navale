@@ -40,7 +40,7 @@ TARGET = 200
 
 class HuntTarget(Strategy):
 
-    potential_targets: list[tuple[int, int]] = attr.field(factory=list)
+    potential_targets: list[tuple[int, int]]
     current_mode: int = HUNT
     name: str = "Hunt & Target"
 
