@@ -68,6 +68,7 @@ class Game:
         # self.bot.own_board.render(2, 1)
         self.root.mainloop()
 
+    @property
     def winner(self) -> Optional[Player]:
         for _, player in enumerate(self.players):
             if player.won:
@@ -75,12 +76,13 @@ class Game:
         return None
 
     def end_turn(self):
-        if (winner := self.winner()) is not None:
-            for player in self.players:
-                player.own_board.mainframe.grid(column=0, row=2)
+        if self.winner is not None:
+            for i, player in enumerate(self.players):
+                player.own_board.mainframe.grid(column=i, row=2)
+                player.ennemy_board.mainframe.grid(column=i, row=0)
             Label(
                 self.root,
-                text=f"Congratulations, {winner.name}. You won with {winner.accuracy*100}% accuracy!",
+                text=f"Congratulations, {self.winner.name}. You won with {(self.winner.accuracy or 0)*100}% accuracy!",
             ).grid(column=0, row=1)
         else:
             self.current_player_index = (self.current_player_index + 1) % 2
