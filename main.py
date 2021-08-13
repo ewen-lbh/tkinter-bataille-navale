@@ -63,6 +63,8 @@ class Game:
         pprint(self.bot.own_board.state)
 
     def start(self):
+        Label(self.root, text=f"Placez vos bateaux (de longueurs {french_join(FLEET)}),\npuis cliquez sur OK.\nEnsuite, cliquez sur un ? pour tirer.").grid(column=0, row=0)
+
         self.user.render()
         # self.bot.ennemy_board.render(2, 0)
         # self.bot.own_board.render(2, 1)
@@ -95,4 +97,5 @@ class Game:
 
 
 if __name__ == "__main__":
+    print(f"fleet is {FLEET}")
     Game().start()

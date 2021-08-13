@@ -289,7 +289,7 @@ class ControlledBoard(Board):
                     ships_found += 1
                     break
             if not ship_found:
-                d(
+                self.d(
                     f">> bateau #{i} non trouvé. le plateau n'est donc pas dans un état légal."
                 )
                 return False

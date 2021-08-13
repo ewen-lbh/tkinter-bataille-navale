@@ -1,5 +1,5 @@
 import tkinter
-from typing import Callable, Any, TypeVar
+from typing import Callable, Any, Iterable, TypeVar, Union
 from rich import print
 
 
@@ -13,8 +13,7 @@ def handle(
     Used to bind events with tkinter's .bind()
     Usage:
     ```python
-    <thing>.bind('<mapping>', partial(self.handle, self.<method to bind>, x, y))
-    ```
+    <thing>.bind('<mapping>', partial(self.handle, self.<method to bind>, x, y)) ```
     """
     return method(x, y)
 
@@ -39,3 +38,6 @@ def doublerange(outer, inner=None):
 
 def d(text: str, *args, **kwargs):
     print("[dim]\[debug][/] " + text, *args, **kwargs)
+
+def french_join(elements: Union[list, tuple]) -> str:
+    return ', '.join(map(str, elements[:-1])) + ' et ' + str(elements[-1])

@@ -109,9 +109,9 @@ class HumanPlayer(Player):
         super().__init__(game, board, ennemy_board, index, name, strategy=NoStrategy)
 
     def render(self):
-        self.own_board.render(0, 1)
-        self.ennemy_board.render(0, 0)
-        self.ok_button.grid(column=1, row=1)
+        self.own_board.render(0, 2)
+        self.ennemy_board.render(0, 1)
+        self.ok_button.grid(column=1, row=2)
 
     def handle_click_ok(self, event) -> Any:
         if self.game.phase == PLACING:
