@@ -69,6 +69,8 @@ class Game:
         self.user.ennemy_board.render(0, 2)
         Label(self.root, text=self.user.name).grid(column=0, row=3)
         self.user.own_board.render(0, 4)
+
+        self.user.ok_button.grid(column=0, row=5)
         self.root.mainloop()
 
     @property
