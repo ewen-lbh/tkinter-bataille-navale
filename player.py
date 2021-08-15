@@ -6,6 +6,7 @@ from board import (
     ProjectiveBoard,
     SUNKEN,
     WATER,
+    DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER,
 )
 from utils import *
 from typing import Any, Optional, Type
@@ -17,6 +18,11 @@ import random
 PLACING = 4
 SHOOTING = 5
 DECIDING = 6
+
+FLEET = [DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER]
+HELPTEXT_PLACING = f"Placez vos bateaux (de longueurs {french_join(FLEET)}),\npuis cliquez sur OK."
+HELPTEXT_WRONG = f"Veuillez placer tout les bateaux correctement\n{HELPTEXT_PLACING}"
+HELPTEXT_SHOOTING = "Cliquez sur une case '?' pour tirer à cet endroit."
 
 
 class Player:
@@ -120,9 +126,11 @@ class HumanPlayer(Player):
             )
             if not self.own_board.legal:
                 self.d(f"board is not legal! not locking & switching phase.")
+                self.game.helptext_var.set(HELPTEXT_WRONG)
                 return
             self.own_board.lock()
             self.game.phase = SHOOTING
+            self.game.helptext_var.set(HELPTEXT_SHOOTING)
 
     @property
     def human(self) -> bool:
@@ -170,13 +178,12 @@ class AIPlayer(Player):
                 self.own_board @ (x, y)
                 for (x, y) in self.own_board.horizontal_coordinates(x, y, y + ship)
             ] == [WATER] * ship
-        elif orientation == VERTICAL:
+        if orientation == VERTICAL:
             return [
                 self.own_board @ (x, y)
                 for (x, y) in self.own_board.vertical_coordinates(y, x, x + ship)
             ] == [WATER] * ship
-        else:
-            raise ValueError(f"Unknown orientation {orientation!r}")
+        raise ValueError(f"Unknown orientation {orientation!r}")
 
     def place_ship_randomly(self, ship: int) -> None:
         """

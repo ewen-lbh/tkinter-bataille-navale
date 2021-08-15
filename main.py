@@ -1,5 +1,5 @@
 from ai import HuntTarget
-from tkinter import Tk, Label
+from tkinter import StringVar, Tk, Label
 from typing import Optional
 from utils import *
 from board import (
@@ -10,7 +10,7 @@ from board import (
     BATTLESHIP,
     AIRCRAFT_CARRIER,
 )
-from player import Player, HumanPlayer, AIPlayer, PLACING
+from player import Player, HumanPlayer, AIPlayer, PLACING, HELPTEXT_PLACING
 from rich import print as pprint
 
 FLEET = [DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER]
@@ -27,6 +27,7 @@ class Game:
     phase: int
     current_player_index: int
     players: list[Player]
+    helptext_var: StringVar
 
     def __init__(self) -> None:
         self.root = Tk()
@@ -34,6 +35,7 @@ class Game:
         self.root.rowconfigure(0, weight=1)
         self.phase = PLACING
         self.current_player_index = 0
+        self.helptext_var = StringVar()
 
         user_board = ControlledBoard(
             self, grid_size=GRID_SIZE, fleet=FLEET, owner=DummyPlayer("Chirex", True)
@@ -63,7 +65,11 @@ class Game:
         pprint(self.bot.own_board.state)
 
     def start(self):
-        Label(self.root, text=f"Placez vos bateaux (de longueurs {french_join(FLEET)}),\npuis cliquez sur OK.\nEnsuite, cliquez sur un ? pour tirer.").grid(column=0, row=0)
+        self.helptext_var.set(HELPTEXT_PLACING)
+        Label(
+            self.root,
+            textvariable=self.helptext_var
+        ).grid(column=0, row=0)
 
         self.user.render()
         # self.bot.ennemy_board.render(2, 0)
@@ -79,13 +85,7 @@ class Game:
 
     def end_turn(self):
         if self.winner is not None:
-            for i, player in enumerate(self.players):
-                player.own_board.mainframe.grid(column=i, row=2)
-                player.ennemy_board.mainframe.grid(column=i, row=0)
-            Label(
-                self.root,
-                text=f"Congratulations, {self.winner.name}. You won with {(self.winner.accuracy or 0)*100}% accuracy!",
-            ).grid(column=0, row=1)
+            self.helptext_var.set(f"Bravo, {self.winner.name}! Vous avez gagné avec une précsion de {(self.winner.accuracy or 0)*100}%")
         else:
             self.current_player_index = (self.current_player_index + 1) % 2
             if self.bot.turn_is_mine():

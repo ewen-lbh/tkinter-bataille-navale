@@ -39,5 +39,6 @@ def doublerange(outer, inner=None):
 def d(text: str, *args, **kwargs):
     print("[dim]\[debug][/] " + text, *args, **kwargs)
 
+
 def french_join(elements: Union[list, tuple]) -> str:
-    return ', '.join(map(str, elements[:-1])) + ' et ' + str(elements[-1])
+    return ", ".join(map(str, elements[:-1])) + " et " + str(elements[-1])
