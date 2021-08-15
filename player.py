@@ -79,7 +79,7 @@ class Player:
         Returns True if none the cell's of the ennemy's (controlled) board are ships (i.e. all are sunken or water)
         """
         return all(
-            self.ennemy_board.real_board @ (x, y) in (SUNKEN, WATER)
+            self.ennemy_board.real_board @ (x, y) != SHIP
             for x, y in doublerange(self.ennemy_board.size)
         )
 

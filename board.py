@@ -11,12 +11,14 @@ WATER = 0  # Eau (case vide)
 SHIP = 1  # Occupé (case avec un bateau non coulé, pour les ControlledBoards seulement)
 SUNKEN = 2  # Coulé
 UNKNOWN = 3  # Pour les ProjectiveBoards seulement
+MISSED = 4 # Case d'eau mais touchée
 
 # Les états à afficher par rapport à leur code
 CELL_DISPLAY_STATES = {
     SUNKEN: {"text": "🏳️", "bg": "red"},
     SHIP: {"text": "⛵", "bg": "white"},
     WATER: {"text": "🌊", "bg": "blue"},
+    MISSED: {"text": "🌀", "bg": "cyan"},
     UNKNOWN: {"text": "❔", "bg": "grey"},
 }
 
@@ -98,6 +100,12 @@ class Board:
         return dict_reciprocal(CELL_DISPLAY_STATES, key=lambda s: s["text"])[
             self.cells[x][y]["text"]
         ]
+    
+    def within_bounds(self, x: int, y: int) -> bool:
+        """
+        Check if the cell's coordinates are within bounds of the board
+        """
+        return 0 <= x <= self.size and 0 <= y <= self.size
 
     def render(self, column: int, row: int, span: int = 1):
         self.mainframe.grid(column=column, row=row, columnspan=span, rowspan=span)
@@ -218,7 +226,8 @@ class ControlledBoard(Board):
         Fires a shot at row x column y.
         Returns whether the shot hit a non-sunken ship or not
         """
-        if self.state_of(x, y) == WATER:
+        if self.state_of(x, y) in (WATER, MISSED):
+            self.change_cell(x, y, MISSED)
             return False
 
         self.change_cell(x, y, SUNKEN)
@@ -344,7 +353,7 @@ class ProjectiveBoard(Board):
         self.owner.strategy.react_to_shot_result(x, y, hit_a_ship)
         self.d(f"fired, {hit_a_ship=}, changing cell state")
 
-        self.change_cell(x, y, SUNKEN if hit_a_ship else WATER)
+        self.change_cell(x, y, SUNKEN if hit_a_ship else MISSED)
         self.shots_fired += 1
         if not hit_a_ship:
             self.shots_missed += 1
