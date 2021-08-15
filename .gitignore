@@ -147,4 +147,3 @@ cython_debug/
 # Environment variables
 .env
 venv
-onefile.py
