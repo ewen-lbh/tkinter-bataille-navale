@@ -34,14 +34,10 @@ class Strategy:
         )
 
 
-HUNT = 100
-TARGET = 200
-
-
 class HuntTarget(Strategy):
 
     potential_targets: list[tuple[int, int]]
-    current_mode: int = HUNT
+    already_hit: list[tuple[int, int]]
     name: str = "Hunt & Target"
 
     def __init__(
@@ -49,34 +45,26 @@ class HuntTarget(Strategy):
     ) -> None:
         super().__init__(name, own_board, ennemy_board)
         self.potential_targets = []
-        self.current_mode = HUNT
+        self.already_hit = []
         self.name = "Hunt & Target"
 
     def choose_shot_location(self) -> tuple[int, int]:
-        self.d(f"current mode is {self.current_mode}")
-        if self.current_mode == HUNT:
+        if self.potential_targets == []:
             return self.ennemy_board.random_coordinates()
         else:
             return self.potential_targets.pop()
 
     def react_to_shot_result(self, x: int, y: int, hit_a_ship: bool) -> Any:
+        self.already_hit.append((x, y))
+
         if hit_a_ship:
-            self.current_mode = TARGET
-        elif self.potential_targets == []:
-            self.current_mode = HUNT
-
-        self.d(f"switched current mode to {self.current_mode}.")
-
-        if self.current_mode == TARGET:
-            self.d(
-                f"adding potential targets {self.ennemy_board.cardinal_coordinates(x, y)}",
-                end="",
-            )
-            self.potential_targets = (
-                list(self.ennemy_board.cardinal_coordinates(x, y))
-                + self.potential_targets
-            )
-            pprint(self.potential_targets)
+            self.potential_targets += [
+                target for target in
+                self.ennemy_board.cardinal_coordinates(x, y)
+                if self.ennemy_board.within_bounds(*target)
+                and target not in self.already_hit
+            ]
+            self.d(f"potential targets are {self.potential_targets}")
 
 
 class NoStrategy(Strategy):
