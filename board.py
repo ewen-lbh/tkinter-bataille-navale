@@ -36,6 +36,7 @@ class Board:
     state: list[list[int]]
     game: "Game"
     owner: "Player"
+    locked: bool
 
     def __init__(
         self, game: "Game", grid_size: int, initial_state: int, owner: "Player"
@@ -46,6 +47,7 @@ class Board:
         self.mainframe = Frame(game.root)
         self.game = game
         self.owner = owner
+        self.locked = False
 
         for x in range(self.size):
             self.cells.append([])
@@ -97,8 +99,8 @@ class Board:
             self.cells[x][y]["text"]
         ]
 
-    def render(self, column: int, row: int):
-        self.mainframe.grid(column=column, row=row)
+    def render(self, column: int, row: int, span: int = 1):
+        self.mainframe.grid(column=column, row=row, columnspan=span, rowspan=span)
 
     def random_coordinates(self) -> tuple[int, int]:
         return randint(0, self.size - 1), randint(0, self.size - 1)
@@ -151,6 +153,9 @@ class Board:
             *args,
             **kwargs,
         )
+    
+    def lock(self):
+        self.locked = True
 
 
 class ControlledBoard(Board):
@@ -160,7 +165,6 @@ class ControlledBoard(Board):
     when the shooting phase starts.
     """
 
-    locked: bool
     total_ships: int
     fleet: set[int]
     owner: "Player"
@@ -174,7 +178,6 @@ class ControlledBoard(Board):
     ):
         super().__init__(game, grid_size, initial_state=WATER, owner=owner)
         self.fleet = fleet
-        self.locked = False
         self.total_ships = sum(fleet)
 
     @property
@@ -220,9 +223,6 @@ class ControlledBoard(Board):
 
         self.change_cell(x, y, SUNKEN)
         return True
-
-    def lock(self):
-        self.locked = True
 
     @property
     def legal(self) -> bool:
@@ -322,6 +322,9 @@ class ProjectiveBoard(Board):
         self.shots_fired = 0
 
     def handle_cell_Button1(self, x, y):
+        if self.locked:
+            self.d("board is locked! not firing.")
+            return
         super().handle_cell_Button1(x, y)
         self.fire(x, y)
 
