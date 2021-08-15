@@ -6,8 +6,11 @@ from tkinter import Button, Frame, Label, Place, StringVar, Tk
 from tkinter.constants import VERTICAL
 from typing import *
 
-from rich import print
-from rich import print as pprint
+try:
+    from rich import print
+    from rich import print as pprint
+except ImportError:
+    from pprint import pprint
 
 ## Utils
 
