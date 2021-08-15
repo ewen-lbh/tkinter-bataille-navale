@@ -166,14 +166,14 @@ class ControlledBoard(Board):
     """
 
     total_ships: int
-    fleet: set[int]
+    fleet: list[int]
     owner: "Player"
 
     def __init__(
         self,
         game: "Game",
         grid_size: int,
-        fleet: set[int],
+        fleet: list[int],
         owner: "Player" = None,
     ):
         super().__init__(game, grid_size, initial_state=WATER, owner=owner)
