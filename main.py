@@ -48,7 +48,11 @@ class Game:
         )
 
         self.user = HumanPlayer(
-            self, user_board, ennemy_board=bot_board, index=0, name=input("Choisissez votre nom: "),
+            self,
+            user_board,
+            ennemy_board=bot_board,
+            index=0,
+            name=input("Choisissez votre nom: "),
         )
         self.bot = AIPlayer(
             self,
@@ -66,10 +70,7 @@ class Game:
 
     def start(self):
         self.helptext_var.set(HELPTEXT_PLACING)
-        Label(
-            self.root,
-            textvariable=self.helptext_var
-        ).grid(column=0, row=0)
+        Label(self.root, textvariable=self.helptext_var).grid(column=0, row=0)
 
         self.user.render()
         # self.bot.ennemy_board.render(2, 0)
@@ -85,7 +86,9 @@ class Game:
 
     def end_turn(self):
         if self.winner is not None:
-            self.helptext_var.set(f"Bravo, {self.winner.name}! Vous avez gagné avec une précsion de {(self.winner.accuracy or 0)*100}%")
+            self.helptext_var.set(
+                f"Bravo, {self.winner.name}! Vous avez gagné avec une précsion de {(self.winner.accuracy or 0)*100}%"
+            )
             self.winner.ennemy_board.lock()
         else:
             self.current_player_index = (self.current_player_index + 1) % 2

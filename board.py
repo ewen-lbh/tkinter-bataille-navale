@@ -153,7 +153,7 @@ class Board:
             *args,
             **kwargs,
         )
-    
+
     def lock(self):
         self.locked = True
 

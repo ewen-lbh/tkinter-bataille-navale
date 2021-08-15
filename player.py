@@ -6,7 +6,11 @@ from board import (
     ProjectiveBoard,
     SUNKEN,
     WATER,
-    DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER,
+    DESTROYER,
+    CRUISER,
+    SUBMARINE,
+    BATTLESHIP,
+    AIRCRAFT_CARRIER,
 )
 from utils import *
 from typing import Any, Optional, Type
@@ -20,7 +24,9 @@ SHOOTING = 5
 DECIDING = 6
 
 FLEET = [DESTROYER, CRUISER, SUBMARINE, BATTLESHIP, AIRCRAFT_CARRIER]
-HELPTEXT_PLACING = f"Placez vos bateaux (de longueurs {french_join(FLEET)}),\npuis cliquez sur OK."
+HELPTEXT_PLACING = (
+    f"Placez vos bateaux (de longueurs {french_join(FLEET)}),\npuis cliquez sur OK."
+)
 HELPTEXT_WRONG = f"Veuillez placer tout les bateaux correctement\n{HELPTEXT_PLACING}"
 HELPTEXT_SHOOTING = "Cliquez sur une case '?' pour tirer à cet endroit."
 
