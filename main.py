@@ -65,9 +65,10 @@ class Game:
         self.helptext_var.set(HELPTEXT_PLACING)
         Label(self.root, textvariable=self.helptext_var).grid(column=0, row=0)
 
-        self.user.render()
-        # self.bot.ennemy_board.render(2, 0)
-        # self.bot.own_board.render(2, 1)
+        Label(self.root, text=self.bot.name).grid(column=0, row=3)
+        self.user.ennemy_board.render(0, 4)
+        Label(self.root, text=self.user.name).grid(column=0, row=1)
+        self.user.own_board.render(0, 2)
         self.root.mainloop()
 
     @property
