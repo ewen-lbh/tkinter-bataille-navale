@@ -14,10 +14,10 @@ UNKNOWN = 3  # Pour les ProjectiveBoards seulement
 
 # Les états à afficher par rapport à leur code
 CELL_DISPLAY_STATES = {
-    SUNKEN: {"text": "⛝", "bg": "red"},
-    SHIP: {"text": "□", "bg": "white"},
-    WATER: {"text": "≋", "bg": "blue"},
-    UNKNOWN: {"text": "?", "bg": "grey"},
+    SUNKEN: {"text": "🏳️", "bg": "red"},
+    SHIP: {"text": "⛵", "bg": "white"},
+    WATER: {"text": "🌊", "bg": "blue"},
+    UNKNOWN: {"text": "❔", "bg": "grey"},
 }
 
 DESTROYER = 2
