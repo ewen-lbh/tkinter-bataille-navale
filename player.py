@@ -1,17 +1,6 @@
 from ai import NoStrategy, Strategy
 from tkinter.constants import VERTICAL
-from board import (
-    ControlledBoard,
-    HORIZONTAL,
-    ProjectiveBoard,
-    SUNKEN,
-    WATER,
-    DESTROYER,
-    CRUISER,
-    SUBMARINE,
-    BATTLESHIP,
-    AIRCRAFT_CARRIER,
-)
+from board import *
 from utils import *
 from typing import Any, Optional, Type
 from tkinter import Button

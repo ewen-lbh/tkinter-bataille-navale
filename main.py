@@ -2,14 +2,7 @@ from ai import HuntTarget
 from tkinter import StringVar, Tk, Label
 from typing import Optional
 from utils import *
-from board import (
-    ControlledBoard,
-    DESTROYER,
-    CRUISER,
-    SUBMARINE,
-    BATTLESHIP,
-    AIRCRAFT_CARRIER,
-)
+from board import *
 from player import Player, HumanPlayer, AIPlayer, PLACING, HELPTEXT_PLACING
 from rich import print as pprint
 
